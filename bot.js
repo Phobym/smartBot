@@ -3,11 +3,12 @@ const axios = require('axios');
 const moment = require('moment');
 const {MenuTemplate, MenuMiddleware} = require('telegraf-inline-menu')
 const { Telegraf } = require('telegraf')
+const xmlConverter = require('xml-js')
 
 
 const menuTemplate = new MenuTemplate(ctx => `Привет ${ctx.from.first_name}!`)
 
-menuTemplate.interact('Шо там в космосе', 'a', {
+menuTemplate.interact('Космос', 'a', {
 	do: async ctx => {
         function getRandomArbitrary(min, max) {
             return Math.random() * (max - min) + min;
@@ -26,17 +27,17 @@ menuTemplate.interact('Шо там в космосе', 'a', {
         };
         const responseToYa = await axios.post('https://translate.api.cloud.yandex.net/translate/v2/translate', bodyParameters, config)
         const rusText = responseToYa.data.translations[0].text;
-        if (rusText.length < 1024)
-            ctx.replyWithPhoto({url:imageUrl},{caption: rusText.slice(1,-1)})
+         if (rusText.length < 1024)
+            ctx.replyWithPhoto({url:imageUrl},{caption: rusText.slice(1, -1)})
         else {
             ctx.reply(imageUrl)
-            ctx.reply(rusText.slice(1,-1))
+            ctx.reply(rusText.slice(1, -1))
         }
 		return false
 	}
 })
 
-menuTemplate.interact('Шо с криптой', 'b', {
+menuTemplate.interact('Курсы криптовалют', 'b', {
 	do: async ctx => {
         const config = {
             headers: { Authorization: `Apikey ${process.env.CRYPTOCOMPARE_API_KEY}` }
@@ -46,6 +47,25 @@ menuTemplate.interact('Шо с криптой', 'b', {
         ctx.reply(`Биткоин: ${responseToCrypto.data.BTC.USD}$\nЭфириум: ${responseToCrypto.data.ETH.USD}$\nАДА: ${responseToCrypto.data.ADA.USD}$`)
 		return false
 	}
+})
+
+menuTemplate.interact('Курсы валют', 'c', {
+    do: async ctx => {
+        const currentDate = moment().format('DD/MM/YYYY')
+        const xmlResponse = await axios.get(`http://www.cbr.ru/scripts/XML_daily.asp?date_req=${currentDate}`)
+        const data = xmlConverter.xml2js(xmlResponse.data, {compact:true, spaces: 4})
+        const arrOfValute = data.ValCurs.Valute
+        const arr2client = []
+        // console.log(arrOfValute[0].CharCode._text);
+        for(let valute of arrOfValute) {
+            if (valute.CharCode._text === 'EUR' || valute.CharCode._text === 'USD' )
+            arr2client.push({name : valute.CharCode._text, value: valute.Value._text})
+        }
+        ctx.reply(`Курс валют на ${moment().format('DD.MM.YYYY')}\n${arr2client[0].name} : ${arr2client[0].value.slice(0, -2)} руб.\n${arr2client[1].name} : ${arr2client[1].value.slice(0, -2)} руб.`)
+        
+            
+        return false
+    }
 })
 
 const bot = new Telegraf(process.env.BOT_TOKEN)

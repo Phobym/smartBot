@@ -16,7 +16,8 @@
     "moment": "^2.29.1",
     "node-fetch": "^3.0.0",
     "telegraf": "^4.4.2",
-    "telegraf-inline-menu": "^6.3.0"
+    "telegraf-inline-menu": "^6.3.0",
+    "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
